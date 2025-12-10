@@ -3,17 +3,36 @@
           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
           xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0
                               http://maven.apache.org/xsd/settings-1.0.0.xsd">
-  <mirrors>
-    <mirror>
-      <id>custom-repo</id>
-      <mirrorOf>central</mirrorOf>
-      <url>{{ repoUrl }}</url>
-    </mirror>
-  </mirrors>
+  {% if repoUrl %}
+  <profiles>
+    <profile>
+      <id>remote-profile</id>
+      <repositories>
+        <repository>
+          <id>remote-repo</id>
+          <url>{{ repoUrl }}</url>
+          <releases><enabled>true</enabled></releases>
+          <snapshots><enabled>true</enabled></snapshots>
+        </repository>
+      </repositories>
+      <pluginRepositories>
+        <pluginRepository>
+          <id>remote-repo</id>
+          <url>{{ repoUrl }}</url>
+          <releases><enabled>true</enabled></releases>
+          <snapshots><enabled>true</enabled></snapshots>
+        </pluginRepository>
+      </pluginRepositories>
+    </profile>
+  </profiles>
+  <activeProfiles>
+    <activeProfile>remote-profile</activeProfile>
+  </activeProfiles>
+  {% endif %}
   {% if username and password %}
   <servers>
     <server>
-      <id>custom-repo</id>
+      <id>{% if repoUrl %}remote-repo{% else %}central{% endif %}</id>
       <username>{{ username }}</username>
       <password>{{ password }}</password>
     </server>

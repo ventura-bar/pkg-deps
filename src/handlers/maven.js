@@ -37,7 +37,7 @@ async function createPom(tmpDir, artifactInfo, version) {
 }
 
 async function createSettings(tmpDir, repoUrl, username, password) {
-  if (!repoUrl) return null;
+  if (!repoUrl && (!username || !password)) return null;
 
   const settingsContent = nunjucks.render('settings.xml.njk', {
     repoUrl,
