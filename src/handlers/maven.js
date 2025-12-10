@@ -91,7 +91,7 @@ async function download(name, version, extraArgs = [], repoUrl, username, passwo
   // Determine output directory
   // Sanitize groupId:artifactId for folder name
   const safeName = `${artifactInfo.groupId}-${artifactInfo.artifactId}`.replace(/[^\w-]/g, '-');
-  const  = version || 'LATEST';
+  const actualVersion = version || 'LATEST';
   const defaultDir = path.join('bundles', `${safeName}-${actualVersion}-bundle`);
   const outDir = outputDir ? path.resolve(outputDir) : path.resolve(defaultDir);
   const artifact = `${name}:${actualVersion}`;
