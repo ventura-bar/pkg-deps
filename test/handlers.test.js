@@ -29,7 +29,7 @@ const TESTS = {
         package: 'lodash',
         version: '4.17.21',
         extraArgs: ['--output', 'custom-path-npm-bundle'],
-        outputDir: 'custom-npm-bundle',
+        outputDir: 'custom-path-npm-bundle',
         expectedFiles: ['lodash-4.17.21.tgz'],
         minFiles: 1
     },

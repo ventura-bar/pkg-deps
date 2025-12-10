@@ -1,3 +1,4 @@
+const BaseHandler = require('./base');
 const fs = require('fs-extra');
 const path = require('path');
 const os = require('os');
@@ -8,119 +9,107 @@ const nunjucks = require('nunjucks');
 // Configure nunjucks
 nunjucks.configure(path.join(__dirname, '../templates'), { autoescape: true });
 
-function parsePackageName(name) {
-  if (!name.includes(':')) {
-    throw new Error('Maven package name must be in format groupId:artifactId');
-  }
-  const parts = name.split(':');
-  return {
-    groupId: parts[0],
-    artifactId: parts[1],
-    type: parts.length > 2 ? parts[2] : null,
-    classifier: parts.length > 3 ? parts[3] : null
-  };
-}
-
-async function createPom(tmpDir, artifactInfo, version) {
-  const actualVersion = version || 'LATEST';
-  const pomContent = nunjucks.render('pom.xml.njk', {
-    groupId: artifactInfo.groupId,
-    artifactId: artifactInfo.artifactId,
-    version: actualVersion,
-    type: artifactInfo.type,
-    classifier: artifactInfo.classifier
-  });
-
-  const pomPath = path.join(tmpDir, 'pom.xml');
-  await fs.writeFile(pomPath, pomContent);
-  return pomPath;
-}
-
-async function createSettings(tmpDir, repoUrl, username, password) {
-  if (!repoUrl && (!username || !password)) return null;
-
-  const settingsContent = nunjucks.render('settings.xml.njk', {
-    repoUrl,
-    username,
-    password
-  });
-
-  const settingsPath = path.join(tmpDir, 'settings.xml');
-  await fs.writeFile(settingsPath, settingsContent);
-  return settingsPath;
-}
-
-async function runMavenCopy(pomPath, outDir, extraArgs, settingsPath) {
-  const mvnArgs = [
-    'dependency:copy-dependencies',
-    `-DoutputDirectory=${outDir}`,
-    '-DincludeScope=runtime',
-    '-f',
-    pomPath,
-    ...extraArgs
-  ];
-
-  if (settingsPath) {
-    mvnArgs.push('-s', settingsPath);
+class MavenHandler extends BaseHandler {
+  constructor() {
+    super('maven');
   }
 
-  await runCommand('mvn', mvnArgs);
-}
-
-async function runMavenCopyPoms(pomPath, outDir, settingsPath) {
-  console.log(chalk.gray('Copying POM files for all dependencies...'));
-  const pomMvnArgs = [
-    'dependency:copy-dependencies',
-    `-DoutputDirectory=${outDir}`,
-    '-DincludeScope=runtime',
-    '-Dmdep.copyPom=true',
-    '-f',
-    pomPath
-  ];
-
-  if (settingsPath) {
-    pomMvnArgs.push('-s', settingsPath);
+  parsePackageName(name) {
+    if (!name.includes(':')) {
+      throw new Error('Maven package name must be in format groupId:artifactId');
+    }
+    const parts = name.split(':');
+    return {
+      groupId: parts[0],
+      artifactId: parts[1],
+      type: parts.length > 2 ? parts[2] : null,
+      classifier: parts.length > 3 ? parts[3] : null
+    };
   }
 
-  await runCommand('mvn', pomMvnArgs);
-}
+  async createPom(tmpDir, artifactInfo, version) {
+    const actualVersion = version || 'LATEST';
+    const pomContent = nunjucks.render('pom.xml.njk', {
+      groupId: artifactInfo.groupId,
+      artifactId: artifactInfo.artifactId,
+      version: actualVersion,
+      type: artifactInfo.type,
+      classifier: artifactInfo.classifier
+    });
 
-async function download(name, version, extraArgs = [], repoUrl, username, password, outputDir) {
-  const artifactInfo = parsePackageName(name);
+    const pomPath = path.join(tmpDir, 'pom.xml');
+    await fs.writeFile(pomPath, pomContent);
+    return pomPath;
+  }
 
-  // Determine output directory
-  // Sanitize groupId:artifactId for folder name
-  const safeName = `${artifactInfo.groupId}-${artifactInfo.artifactId}`.replace(/[^\w-]/g, '-');
-  const actualVersion = version || 'LATEST';
-  const defaultDir = path.join('bundles', `${safeName}-${actualVersion}-bundle`);
-  const outDir = outputDir ? path.resolve(outputDir) : path.resolve(defaultDir);
-  const artifact = `${name}:${actualVersion}`;
+  async createSettings(tmpDir, repoUrl, username, password) {
+    if (!repoUrl && (!username || !password)) return null;
 
-  // Create temporary directory
-  const tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'bundle-cli-maven-'));
+    const settingsContent = nunjucks.render('settings.xml.njk', {
+      repoUrl,
+      username,
+      password
+    });
 
-  try {
-    // Clean and create output directory
-    await fs.remove(outDir);
-    await fs.ensureDir(outDir);
+    const settingsPath = path.join(tmpDir, 'settings.xml');
+    await fs.writeFile(settingsPath, settingsContent);
+    return settingsPath;
+  }
 
-    console.log(chalk.blue(`Downloading ${artifact} and dependencies...`));
+  // Override download to change directory naming convention specific to Maven if needed.
+  // BaseHandler uses name-version-bundle. Maven often wants clean separation.
+  // However, BaseHandler's `safeName` logic handles slashes/colons. 
+  // `junit:junit` -> `junit-junit`. `4.13.2` -> `bundle`.
+  // The previous implementation used `${groupId}-${artifactId}`.
+  // BaseHandler will produce `junit-junit`. This is close enough and standardizes it.
 
-    // Generate Stage
-    const pomPath = await createPom(tmpDir, artifactInfo, version);
-    const settingsPath = await createSettings(tmpDir, repoUrl, username, password);
+  async _download(name, version, extraArgs, repoUrl, username, password, outDir) {
+    const artifactInfo = this.parsePackageName(name);
+    // We override version logic slightly in createPom (LATEST) but actualVersion passed here is fine.
+    const actualVersion = version || 'LATEST';
+    const artifact = `${name}:${actualVersion}`;
 
-    // Execution Stage
-    await runMavenCopy(pomPath, outDir, extraArgs, settingsPath);
-    await runMavenCopyPoms(pomPath, outDir, settingsPath);
+    const tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'bundle-cli-maven-'));
 
-    console.log(chalk.green(`Offline JARs and POMs for ${artifact} are in ${outDir}`));
+    try {
+      console.log(chalk.blue(`Downloading ${artifact} and dependencies...`));
 
-  } catch (error) {
-    throw error;
-  } finally {
-    await fs.remove(tmpDir);
+      // Generate Stage
+      const pomPath = await this.createPom(tmpDir, artifactInfo, version); // Pass original version to allow 'LATEST' logic
+      const settingsPath = await this.createSettings(tmpDir, repoUrl, username, password);
+
+      // Execution Stage
+      // Copy dependencies
+      const mvnArgs = [
+        'dependency:copy-dependencies',
+        `-DoutputDirectory=${outDir}`,
+        '-DincludeScope=runtime',
+        '-f',
+        pomPath,
+        ...extraArgs
+      ];
+      if (settingsPath) mvnArgs.push('-s', settingsPath);
+      await runCommand('mvn', mvnArgs);
+
+      // Copy POMs
+      console.log(chalk.gray('Copying POM files for all dependencies...'));
+      const pomMvnArgs = [
+        'dependency:copy-dependencies',
+        `-DoutputDirectory=${outDir}`,
+        '-DincludeScope=runtime',
+        '-Dmdep.copyPom=true',
+        '-f',
+        pomPath
+      ];
+      if (settingsPath) pomMvnArgs.push('-s', settingsPath);
+      await runCommand('mvn', pomMvnArgs);
+
+      console.log(chalk.green(`Offline JARs and POMs for ${artifact} are in ${outDir}`));
+
+    } finally {
+      await fs.remove(tmpDir);
+    }
   }
 }
 
-module.exports = { download };
+module.exports = { download: (n, v, e, r, u, p, o) => new MavenHandler().download(n, v, e, r, u, p, o) };

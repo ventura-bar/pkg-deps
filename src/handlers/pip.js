@@ -1,26 +1,14 @@
-const path = require('path');
-const fs = require('fs-extra');
+const BaseHandler = require('./base');
 const { runCommand } = require('../utils');
 const chalk = require('chalk');
 
-async function download(name, version, extraArgs = [], repoUrl, username, password, outputDir) {
-    // Pip doesn't strictly require version in the command if included in name, 
-    // but we can support name==version format if version is provided.
-    const packageSpec = version ? `${name}==${version}` : name;
+class PipHandler extends BaseHandler {
+    constructor() {
+        super('pip');
+    }
 
-    // Determine output directory
-    const safeName = name.replace(/[^\w-]/g, '-');
-    const actualVersion = version || 'latest';
-    const defaultDir = path.join('bundles', `${safeName}-${actualVersion}-bundle`);
-    const outDir = outputDir ? path.resolve(outputDir) : path.resolve(defaultDir);
-
-    try {
-        // Clean and create output directory
-        await fs.remove(outDir);
-        await fs.ensureDir(outDir);
-
-        console.log(chalk.blue(`Downloading ${packageSpec} and dependencies to ${outDir}...`));
-
+    async _download(name, version, extraArgs, repoUrl, username, password, outDir) {
+        const packageSpec = version ? `${name}==${version}` : name;
         const args = ['download', '--dest', outDir, packageSpec, ...extraArgs];
 
         if (repoUrl) {
@@ -40,12 +28,7 @@ async function download(name, version, extraArgs = [], repoUrl, username, passwo
         }
 
         await runCommand('pip', args);
-
-        console.log(chalk.green(`Offline pip bundle for ${packageSpec} is ready in ${outDir}`));
-
-    } catch (error) {
-        throw error;
     }
 }
 
-module.exports = { download };
+module.exports = { download: (n, v, e, r, u, p, o) => new PipHandler().download(n, v, e, r, u, p, o) };
