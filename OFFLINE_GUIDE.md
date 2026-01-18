@@ -139,60 +139,6 @@ Example:
 mkdir bundle && apk fetch --recursive --output ./bundle vim
 ```
 
----
-
-### 7. Debian / Ubuntu (DEB / APT)
-#### Install dependency tool
-
-```sh
-apt-get -y install apt-rdepends
-```
-
-##### Download package + dependencies
-
-:::warning
-Run this twice so it will work (permissions)
-:::
-:::warning
-Review for ubuntu
-:::
-```sh
-mkdir debian-bundle
-cd debian-bundle
-apt-get download $(apt-rdepends <package>|grep -v "^ " |grep -v "^libc-dev$")
-```
-
----
-
-### 8. RHEL / CentOS / Fedora (RPM)
-:::warning
-Review
-:::
-#### Download package + dependencies
-
-```sh
-yum install -y yum-utils
-yumdownloader --resolve --destdir=./bundle <package-name>
-```
-
----
-
-### 9. Go Modules
-:::warning
-Review
-:::
-#### Download all dependencies
-
-```sh
-go mod download
-go mod vendor
-```
-
-Bundle:
-
-```sh
-tar -czf bundle.tar.gz vendor
-```
 
 
 <br />
@@ -214,12 +160,3 @@ Use Artifactory/Nexus CLI for it -
   * Take each bundle folder of the package you have downloaded
   * Bring it to your air-gapped enviroment
   * Upload it as a bundle / list of packages,  using your repo manager cli/api (Artifactory/Nexus)
----
-### Can this process be automated?
-
-Soon... 
-
----
-### Is there a CLI to run those scripts
-
-Soon...
