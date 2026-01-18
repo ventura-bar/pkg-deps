@@ -24,7 +24,7 @@ The underlying package managers must be installed and available in your system's
 ## Installation
 
 ```sh
-npm install -g .
+npm install -g pkg-deps
 ```
 
 ## Usage

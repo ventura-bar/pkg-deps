@@ -1,17 +1,39 @@
 {
   "name": "pkg-deps",
   "version": "1.0.0",
-  "description": "",
+  "description": "A CLI tool to bundle packages and their dependencies for offline and air-gapped environments.",
   "main": "index.js",
   "bin": {
-    "pkg-deps": "./bin/index.js"
+    "pkg-deps": "bin/index.js"
   },
   "scripts": {
     "test": "node test/handlers.test.js"
   },
-  "keywords": [],
-  "author": "",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ventura-bar/bundle-cli.git"
+  },
+  "keywords": [
+    "offline",
+    "bundle",
+    "package",
+    "airgap",
+    "onprem",
+    "npm",
+    "pip",
+    "maven",
+    "nuget",
+    "docker",
+    "apk",
+    "artifactory",
+    "nexus"
+  ],
+  "author": "Bar Ventura",
   "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/ventura-bar/bundle-cli/issues"
+  },
+  "homepage": "https://github.com/ventura-bar/bundle-cli#readme",
   "type": "commonjs",
   "dependencies": {
     "chalk": "^4.1.2",
