@@ -1,14 +1,15 @@
 const fs = require('fs-extra');
 const path = require('path');
-const { execSync } = require('child_process');
+const { execSync, spawnSync } = require('child_process');
 const assert = require('assert');
 
-const CLI_PATH = path.join(__dirname, '..', 'bin', 'index.js');
+const PKG_PACK_PATH = path.join(__dirname, '..', 'bin', 'index.js');
 
 // Helper to check if a command exists
 function commandExists(command) {
+    const checkCmd = process.platform === 'win32' ? 'where' : 'which';
     try {
-        execSync(`which ${command}`, { stdio: 'ignore' });
+        execSync(`${checkCmd} ${command}`, { stdio: 'ignore' });
         return true;
     } catch {
         return false;
@@ -74,18 +75,21 @@ const TESTS = {
 };
 
 function runCLI(type, packageName, version, extraArgs = []) {
-    const args = [CLI_PATH, type, '--package', packageName];
+    const args = [PKG_PACK_PATH, type, '--package', packageName];
     if (version) {
         args.push('--version', version);
     }
     args.push(...extraArgs);
 
-    const cmd = args.join(' ');
-    console.log(`  Running: ${cmd}`);
+    console.log(`  Running: node ${args.join(' ')}`);
 
     try {
-        execSync(cmd, { stdio: 'inherit', cwd: path.join(__dirname, '..') });
-        return true;
+        const result = spawnSync(process.execPath, args, {
+            stdio: 'inherit',
+            cwd: path.join(__dirname, '..'),
+            shell: process.platform === 'win32'
+        });
+        return result.status === 0;
     } catch (error) {
         console.error(`  ❌ Command failed: ${error.message}`);
         return false;
@@ -124,7 +128,7 @@ function checkFiles(outputDir, expectedFiles, expectedPatterns, minFiles) {
 }
 
 async function runTests() {
-    console.log('🧪 Running bundle-cli handler tests...\n');
+    console.log('🧪 Running pkg-pack handler tests...\n');
 
     let passed = 0;
     let failed = 0;

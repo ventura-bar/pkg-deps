@@ -1,10 +1,10 @@
 {
-  "name": "bundle-cli",
+  "name": "pkg-pack",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
   "bin": {
-    "bundle-cli": "./bin/index.js"
+    "pkg-pack": "./bin/index.js"
   },
   "scripts": {
     "test": "node test/handlers.test.js"
