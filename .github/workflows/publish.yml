@@ -72,10 +72,6 @@ jobs:
       - name: Upgrade NPM
         run: npm install -g npm@latest
 
-      - name: Debug NPM Config
-        run: |
-          npm --version
-          npm config list
 
       - name: Publish to NPM
         if: ${{ github.event.inputs.dry_run != 'true' }}

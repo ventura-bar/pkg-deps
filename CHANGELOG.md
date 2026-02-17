@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [2.0.6](https://github.com/ventura-bar/pkg-deps/compare/v2.0.2...v2.0.6) (2026-02-17)
+
+
+### Features
+
+* **ci:** finalize secure npm publishing workflow with dry-run support ([63167c9](https://github.com/ventura-bar/pkg-deps/commit/63167c974685662c53b0dd6beec6c3f67d16a47b))
+
 ### [2.0.5](https://github.com/ventura-bar/pkg-deps/compare/v2.0.4...v2.0.5) (2026-02-17)
 
 
