@@ -12,6 +12,11 @@ on:
           - patch
           - minor
           - major
+      dry_run:
+        description: 'Run without publishing (true/false)'
+        required: false
+        default: false
+        type: boolean
 
 jobs:
   test:
@@ -43,7 +48,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20.x'
-          registry-url: 'https://registry.npmjs.org'
 
       - name: Configure Git
         run: |
@@ -54,10 +58,29 @@ jobs:
         run: npm install
 
       - name: Bump version and generate changelog
+        if: ${{ github.event.inputs.dry_run != 'true' }}
         run: npm run release -- --release-as ${{ github.event.inputs.version_type }}
 
+      - name: Bump version (Dry Run)
+        if: ${{ github.event.inputs.dry_run == 'true' }}
+        run: npm run release -- --dry-run --release-as ${{ github.event.inputs.version_type }}
+
       - name: Push changes
+        if: ${{ github.event.inputs.dry_run != 'true' }}
         run: git push --follow-tags origin main
 
+      - name: Upgrade NPM
+        run: npm install -g npm@latest
+
+      - name: Debug NPM Config
+        run: |
+          npm --version
+          npm config list
+
       - name: Publish to NPM
-        run: npm publish --provenance
+        if: ${{ github.event.inputs.dry_run != 'true' }}
+        run: npm publish --provenance --access public
+
+      - name: Publish (Dry Run)
+        if: ${{ github.event.inputs.dry_run == 'true' }}
+        run: npm publish --provenance --access public --dry-run

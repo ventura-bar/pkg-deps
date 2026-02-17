@@ -2,6 +2,27 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [2.0.5](https://github.com/ventura-bar/pkg-deps/compare/v2.0.4...v2.0.5) (2026-02-17)
+
+
+### Bug Fixes
+
+* **ci:** fix registry url slash and add debug info ([5e6503d](https://github.com/ventura-bar/pkg-deps/commit/5e6503d918526aad016e7180ee3464d56f7573d3))
+
+### [2.0.4](https://github.com/ventura-bar/pkg-deps/compare/v2.0.3...v2.0.4) (2026-02-17)
+
+
+### Bug Fixes
+
+* **ci:** add publishConfig to package.json for Trusted Publishing ([e2c7910](https://github.com/ventura-bar/pkg-deps/commit/e2c7910d4900640d556e2e5364b36a528287e17e))
+
+### [2.0.3](https://github.com/ventura-bar/pkg-deps/compare/v2.0.2...v2.0.3) (2026-02-17)
+
+
+### Bug Fixes
+
+* **ci:** remove registry-url to fix Trusted Publishing auth ([ffb7487](https://github.com/ventura-bar/pkg-deps/commit/ffb748729265e854f128cb6843ec84412d643ae9))
+
 ### 2.0.2 (2026-02-17)
 
 
