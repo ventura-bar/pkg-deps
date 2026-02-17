@@ -1,5 +1,5 @@
 const BaseHandler = require('./base');
-const { runCommand } = require('../utils');
+const { runCommand, getAuthenticatedUrl } = require('../utils');
 const chalk = require('chalk');
 
 class PipHandler extends BaseHandler {
@@ -12,23 +12,12 @@ class PipHandler extends BaseHandler {
         const args = ['download', '--dest', outDir, packageSpec, ...extraArgs];
 
         if (repoUrl) {
-            let authUrl = repoUrl;
-            if (username && password) {
-                try {
-                    const url = new URL(repoUrl);
-                    url.username = username;
-                    url.password = password;
-                    authUrl = url.toString();
-                } catch (e) {
-                    console.warn(chalk.yellow('Invalid repository URL provided, ignoring credentials injection.'));
-                }
-            }
-            args.push('--index-url', authUrl);
-            args.push('--trusted-host', new URL(repoUrl).hostname);
+            const { url, hostname } = getAuthenticatedUrl(repoUrl, username, password);
+            args.push('--index-url', url, '--trusted-host', hostname);
         }
 
         await runCommand('pip', args);
     }
 }
 
-module.exports = { download: (n, v, e, r, u, p, o) => new PipHandler().download(n, v, e, r, u, p, o) };
+module.exports = new PipHandler();

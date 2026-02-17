@@ -1,7 +1,7 @@
 const BaseHandler = require('./base');
 const { runCommand } = require('../utils');
 const chalk = require('chalk');
-const path = require('path');
+const path = require('node:path');
 const fs = require('fs-extra');
 
 class DockerHandler extends BaseHandler {
@@ -12,13 +12,13 @@ class DockerHandler extends BaseHandler {
     async _download(name, version, extraArgs, repoUrl, username, password, outDir) {
         const actualVersion = version || 'latest';
         const image = `${name}:${actualVersion}`;
-        const outputName = `${name.replace(/[^\w-]/g, '-')}-${actualVersion}`;
+        const outputName = `${name.replaceAll(/[^\w-]/g, '-')}-${actualVersion}`;
 
         let fullImageName = image;
         let registryHost = '';
 
         if (repoUrl) {
-            registryHost = repoUrl.replace(/^https?:\/\//, '');
+            registryHost = repoUrl.replaceAll(/^https?:\/\//, '');
             if (!image.startsWith(registryHost + '/') && !name.startsWith(registryHost + '/')) {
                 fullImageName = `${registryHost}/${image}`;
             }
@@ -47,4 +47,4 @@ class DockerHandler extends BaseHandler {
     }
 }
 
-module.exports = { download: (n, v, e, r, u, p, o) => new DockerHandler().download(n, v, e, r, u, p, o) };
+module.exports = new DockerHandler();

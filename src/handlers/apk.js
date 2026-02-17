@@ -1,5 +1,5 @@
 const BaseHandler = require('./base');
-const { runCommand } = require('../utils');
+const { runCommand, getAuthenticatedUrl } = require('../utils');
 
 class ApkHandler extends BaseHandler {
     constructor() {
@@ -11,17 +11,8 @@ class ApkHandler extends BaseHandler {
         const args = ['fetch', '-o', outDir, '-R'];
 
         if (repoUrl) {
-            args.push('--repository', repoUrl);
-            if (username && password && !repoUrl.includes('@')) {
-                try {
-                    const url = new URL(repoUrl);
-                    url.username = username;
-                    url.password = password;
-                    args[args.indexOf(repoUrl)] = url.toString();
-                } catch (e) {
-                    // ignore
-                }
-            }
+            const { url: authUrl } = getAuthenticatedUrl(repoUrl, username, password);
+            args.push('--repository', authUrl);
         }
 
         args.push(packageSpec, ...extraArgs);
@@ -29,4 +20,4 @@ class ApkHandler extends BaseHandler {
     }
 }
 
-module.exports = { download: (n, v, e, r, u, p, o) => new ApkHandler().download(n, v, e, r, u, p, o) };
+module.exports = new ApkHandler();

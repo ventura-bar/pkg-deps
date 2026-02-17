@@ -1,7 +1,7 @@
 const BaseHandler = require('./base');
 const fs = require('fs-extra');
-const path = require('path');
-const os = require('os');
+const path = require('node:path');
+const os = require('node:os');
 const { runCommand } = require('../utils');
 const chalk = require('chalk');
 
@@ -71,4 +71,4 @@ class NpmHandler extends BaseHandler {
     }
 }
 
-module.exports = { download: (n, v, e, r, u, p, o) => new NpmHandler().download(n, v, e, r, u, p, o) };
+module.exports = new NpmHandler();

@@ -1,10 +1,13 @@
 const BaseHandler = require('./base');
 const fs = require('fs-extra');
-const path = require('path');
-const os = require('os');
-const { runCommand } = require('../utils');
+const path = require('node:path');
+const os = require('node:os');
 const chalk = require('chalk');
 const nunjucks = require('nunjucks');
+const { XMLParser } = require('fast-xml-parser');
+const { runCommand, fetchUrl } = require('../utils');
+
+const MAVEN_CENTRAL_URL = 'https://repo1.maven.org/maven2';
 
 // Configure nunjucks
 nunjucks.configure(path.join(__dirname, '../templates'), { autoescape: true });
@@ -12,6 +15,7 @@ nunjucks.configure(path.join(__dirname, '../templates'), { autoescape: true });
 class MavenHandler extends BaseHandler {
   constructor() {
     super('maven');
+    this.parser = new XMLParser();
   }
 
   parsePackageName(name) {
@@ -27,8 +31,32 @@ class MavenHandler extends BaseHandler {
     };
   }
 
-  async createPom(tmpDir, artifactInfo, version) {
-    const actualVersion = version || 'LATEST';
+  async resolveLatestVersion(artifactInfo, repoUrl) {
+    const { groupId, artifactId } = artifactInfo;
+    const groupPath = groupId.replaceAll('.', '/');
+    const baseUrl = repoUrl ? repoUrl.replaceAll(/\/$/, '') : MAVEN_CENTRAL_URL;
+    const metadataUrl = `${baseUrl}/${groupPath}/${artifactId}/maven-metadata.xml`;
+
+    console.log(chalk.gray(`Resolving latest version from ${metadataUrl}...`));
+
+    try {
+      const xmlData = await fetchUrl(metadataUrl);
+      const jsonObj = this.parser.parse(xmlData);
+      const latest = jsonObj.metadata?.versioning?.latest || jsonObj.metadata?.versioning?.release;
+
+      if (!latest) {
+        throw new Error(`Could not find latest version in metadata for ${groupId}:${artifactId}`);
+      }
+
+      console.log(chalk.blue(`Resolved latest version: ${latest}`));
+
+      return latest;
+    } catch (error) {
+      throw new Error(`Failed to resolve latest version for ${groupId}:${artifactId}: ${error.message}`);
+    }
+  }
+
+  async createPom(tmpDir, artifactInfo, actualVersion = 'LATEST') {
     const pomContent = nunjucks.render('pom.xml.njk', {
       groupId: artifactInfo.groupId,
       artifactId: artifactInfo.artifactId,
@@ -43,7 +71,9 @@ class MavenHandler extends BaseHandler {
   }
 
   async createSettings(tmpDir, repoUrl, username, password) {
-    if (!repoUrl && (!username || !password)) return null;
+    if (!repoUrl && (!username || !password)) {
+      return null;
+    }
 
     const settingsContent = nunjucks.render('settings.xml.njk', {
       repoUrl,
@@ -56,17 +86,9 @@ class MavenHandler extends BaseHandler {
     return settingsPath;
   }
 
-  // Override download to change directory naming convention specific to Maven if needed.
-  // BaseHandler uses name-version-bundle. Maven often wants clean separation.
-  // However, BaseHandler's `safeName` logic handles slashes/colons. 
-  // `junit:junit` -> `junit-junit`. `4.13.2` -> `bundle`.
-  // The previous implementation used `${groupId}-${artifactId}`.
-  // BaseHandler will produce `junit-junit`. This is close enough and standardizes it.
-
   async _download(name, version, extraArgs, repoUrl, username, password, outDir) {
     const artifactInfo = this.parsePackageName(name);
-    // We override version logic slightly in createPom (LATEST) but actualVersion passed here is fine.
-    const actualVersion = version || 'LATEST';
+    const actualVersion = version || (await this.resolveLatestVersion(artifactInfo, repoUrl));
     const artifact = `${name}:${actualVersion}`;
 
     const tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'pkg-deps-maven-'));
@@ -74,35 +96,24 @@ class MavenHandler extends BaseHandler {
     try {
       console.log(chalk.blue(`Downloading ${artifact} and dependencies...`));
 
-      // Generate Stage
-      const pomPath = await this.createPom(tmpDir, artifactInfo, version); // Pass original version to allow 'LATEST' logic
+      const pomPath = await this.createPom(tmpDir, artifactInfo, actualVersion);
       const settingsPath = await this.createSettings(tmpDir, repoUrl, username, password);
 
-      // Execution Stage
-      // Copy dependencies
       const mvnArgs = [
-        'dependency:copy-dependencies',
-        `-DoutputDirectory=${outDir}`,
-        '-DincludeScope=runtime',
-        '-f',
-        pomPath,
-        ...extraArgs
-      ];
-      if (settingsPath) mvnArgs.push('-s', settingsPath);
-      await runCommand('mvn', mvnArgs);
-
-      // Copy POMs
-      console.log(chalk.gray('Copying POM files for all dependencies...'));
-      const pomMvnArgs = [
         'dependency:copy-dependencies',
         `-DoutputDirectory=${outDir}`,
         '-DincludeScope=runtime',
         '-Dmdep.copyPom=true',
         '-f',
-        pomPath
+        pomPath,
+        ...extraArgs
       ];
-      if (settingsPath) pomMvnArgs.push('-s', settingsPath);
-      await runCommand('mvn', pomMvnArgs);
+
+      if (settingsPath) {
+        mvnArgs.push('-s', settingsPath);
+      }
+
+      await runCommand('mvn', mvnArgs);
 
       console.log(chalk.green(`Offline JARs and POMs for ${artifact} are in ${outDir}`));
 
@@ -112,4 +123,4 @@ class MavenHandler extends BaseHandler {
   }
 }
 
-module.exports = { download: (n, v, e, r, u, p, o) => new MavenHandler().download(n, v, e, r, u, p, o) };
+module.exports = new MavenHandler();

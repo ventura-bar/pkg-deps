@@ -3,7 +3,7 @@ const { runCommand } = require('../utils');
 const chalk = require('chalk');
 const glob = require('glob');
 const fs = require('fs-extra');
-const path = require('path');
+const path = require('node:path');
 
 class NugetHandler extends BaseHandler {
     constructor() {
@@ -81,4 +81,4 @@ class NugetHandler extends BaseHandler {
     }
 }
 
-module.exports = { download: (n, v, e, r, u, p, o) => new NugetHandler().download(n, v, e, r, u, p, o) };
+module.exports = new NugetHandler();

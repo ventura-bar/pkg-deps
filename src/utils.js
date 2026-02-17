@@ -14,4 +14,31 @@ async function runCommand(command, args, options = {}) {
     }
 }
 
-module.exports = { runCommand };
+async function fetchUrl(url) {
+    const response = await fetch(url);
+
+    if (!response.ok) {
+        throw new Error(`HTTP ${response.status} from ${url}`);
+    }
+
+    return response.text();
+}
+
+function getAuthenticatedUrl(repoUrl, username, password) {
+    if (!repoUrl) {
+        return { url: '', hostname: '' };
+    }
+
+    try {
+        const url = new URL(repoUrl);
+        if (username && password) {
+            url.username = username;
+            url.password = password;
+        }
+        return { url: url.toString(), hostname: url.hostname };
+    } catch (e) {
+        throw new Error(`Invalid repository URL: "${repoUrl}"`);
+    }
+}
+
+module.exports = { runCommand, fetchUrl, getAuthenticatedUrl };

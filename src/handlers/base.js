@@ -1,5 +1,5 @@
 const fs = require('fs-extra');
-const path = require('path');
+const path = require('node:path');
 const chalk = require('chalk');
 
 class BaseHandler {
@@ -9,7 +9,7 @@ class BaseHandler {
 
     async download(name, version, extraArgs = [], repoUrl, username, password, outputDir) {
         const actualVersion = version || 'latest';
-        const safeName = name.replace(/[^\w-@\/]/g, '-').replace(/^-+|-+$/g, '');
+        const safeName = name.replaceAll(/[^\w-@\/]/g, '-').replaceAll(/^-+|-+$/g, '');
 
         // Standardize output directory
         const defaultFolderName = `${safeName}-${actualVersion}-bundle`;
@@ -18,15 +18,15 @@ class BaseHandler {
 
         try {
             // Setup
-            await this.preDownload(outDir, name, actualVersion);
+            await this.preDownload(outDir, name, version);
 
             console.log(chalk.blue(`[${this.type}] processing ${name}@${actualVersion}...`));
 
             // Execute specific logic
-            await this._download(name, actualVersion, extraArgs, repoUrl, username, password, outDir);
+            await this._download(name, version, extraArgs, repoUrl, username, password, outDir);
 
             // Cleanup/Verify
-            await this.postDownload(outDir, name, actualVersion);
+            await this.postDownload(outDir, name, version);
 
             console.log(chalk.green(`[${this.type}] bundle ready in ${outDir}`));
 
