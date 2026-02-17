@@ -1,6 +1,6 @@
 {
   "name": "pkg-deps",
-  "version": "2.0.1",
+  "version": "2.0.2",
   "description": "A CLI tool to bundle packages and their dependencies for offline and air-gapped environments.",
   "main": "index.js",
   "bin": {
