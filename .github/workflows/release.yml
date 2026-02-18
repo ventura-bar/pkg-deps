@@ -1,10 +1,10 @@
-name: Publish to NPM
+name: Release Manager
 
 on:
   workflow_dispatch:
     inputs:
       version_type:
-        description: 'Version type to bump'
+        description: 'Version bump type (Production only)'
         required: true
         default: 'patch'
         type: choice
@@ -12,11 +12,9 @@ on:
           - patch
           - minor
           - major
-      dry_run:
-        description: 'Run without publishing (true/false)'
-        required: false
-        default: false
-        type: boolean
+  push:
+    branches:
+      - dev
 
 jobs:
   test:
@@ -32,7 +30,7 @@ jobs:
       - name: Run tests
         run: npm test
 
-  publish:
+  release:
     needs: test
     runs-on: ubuntu-latest
     permissions:
@@ -49,6 +47,9 @@ jobs:
         with:
           node-version: '20.x'
 
+      - name: Upgrade NPM
+        run: npm install -g npm@latest
+
       - name: Configure Git
         run: |
           git config --global user.name "github-actions[bot]"
@@ -57,26 +58,24 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: Bump version and generate changelog
-        if: ${{ github.event.inputs.dry_run != 'true' }}
+      # --- PRODUCTION FLOW (Main Branch) ---
+      - name: Bump Version (Production)
+        if: github.ref == 'refs/heads/main'
         run: npm run release -- --release-as ${{ github.event.inputs.version_type }}
 
-      - name: Bump version (Dry Run)
-        if: ${{ github.event.inputs.dry_run == 'true' }}
-        run: npm run release -- --dry-run --release-as ${{ github.event.inputs.version_type }}
+      - name: Publish (Production)
+        if: github.ref == 'refs/heads/main'
+        run: npm publish --provenance --access public --tag latest
 
-      - name: Push changes
-        if: ${{ github.event.inputs.dry_run != 'true' }}
-        run: git push --follow-tags origin main
+      # --- BETA FLOW (Dev Branch) ---
+      - name: Bump Version (Beta)
+        if: github.ref == 'refs/heads/dev'
+        run: npm run release -- --prerelease beta
 
-      - name: Upgrade NPM
-        run: npm install -g npm@latest
+      - name: Publish (Beta)
+        if: github.ref == 'refs/heads/dev'
+        run: npm publish --provenance --access public --tag beta
 
-
-      - name: Publish to NPM
-        if: ${{ github.event.inputs.dry_run != 'true' }}
-        run: npm publish --provenance --access public
-
-      - name: Publish (Dry Run)
-        if: ${{ github.event.inputs.dry_run == 'true' }}
-        run: npm publish --provenance --access public --dry-run
+      # --- COMMONUSH ---
+      - name: Push Changes
+        run: git push --follow-tags origin ${{ github.ref_name }}
