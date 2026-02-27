@@ -12,12 +12,21 @@ program
 
 const packageTypes = ['npm', 'pip', 'maven', 'nuget', 'docker', 'apk'];
 
+const descriptions = {
+  npm: 'Bundle Node.js npm package',
+  pip: 'Bundle Python pip package',
+  maven: 'Bundle Java Maven package',
+  nuget: 'Bundle .NET NuGet package',
+  docker: 'Bundle Docker container image',
+  apk: 'Bundle Alpine apk package',
+};
+
 packageTypes.forEach(type => {
   const cmd = program
     .command(type)
-    .description(`Bundle ${type} package`)
+    .description(descriptions[type])
     .option('-p, --package <name>', 'Package name')
-    .option('-w, --workspace [path]', 'Bundle dependencies from a workspace (e.g. package.json). Defaults to current directory.')
+    .option('-w, --workspace [path]', 'Bundle all dependencies from a workspace manifest (e.g. package.json). Path defaults to current directory if not specified.')
     .option('-v, --version <version>', 'Package version')
     .option('-o, --output <path>', 'Output directory')
     .option('-r, --repo <url>', 'Repository URL')

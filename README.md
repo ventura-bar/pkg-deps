@@ -1,25 +1,17 @@
-# Pkg Deps
+# pkg-deps
 
-A CLI tool to download packages and their dependencies for offline use.
+A CLI tool to download packages and their dependencies for offline / air-gapped environments.
 
 ## Supported Package Managers
 
-- **NPM** (Node.js)
-- **Pip** (Python)
-- **Maven** (Java)
-- **NuGet** (.NET)
-- **Docker** (Images)
-- **APK** (Alpine Linux)
-
-## Prerequisites
-
-The underlying package managers must be installed and available in your system's PATH:
-- `npm` for NPM packages
-- `pip` for Python packages
-- `mvn` for Maven packages
-- `nuget` for NuGet packages
-- `docker` for Docker images
-- `apk` for Alpine packages (must be run on Alpine Linux)
+| Command  | Ecosystem              | Requires        |
+|----------|------------------------|-----------------|
+| `npm`    | Node.js packages       | `npm`           |
+| `pip`    | Python packages        | `pip`           |
+| `maven`  | Java/JVM packages      | `mvn`           |
+| `nuget`  | .NET packages          | `nuget`         |
+| `docker` | Container images       | `docker`        |
+| `apk`    | Alpine Linux packages  | `apk` (Alpine)  |
 
 ## Installation
 
@@ -29,59 +21,118 @@ npm install -g pkg-deps
 
 ## Usage
 
-```sh
-pkg-deps <command> [options]
+```
+Usage: pkg-deps [options] [command]
+
+CLI to bundle packages for offline use
+
+Options:
+  -V, --cli-version           output the version number
+  -h, --help                  display help for command
+
+Commands:
+  npm [options] [args...]     Bundle Node.js npm package
+  pip [options] [args...]     Bundle Python pip package
+  maven [options] [args...]   Bundle Java Maven package
+  nuget [options] [args...]   Bundle .NET NuGet package
+  docker [options] [args...]  Bundle Docker container image
+  apk [options] [args...]     Bundle Alpine apk package
+  help [command]              display help for command
 ```
 
-### Commands
+### Per-Command Options
 
-- `npm`: Bundle NPM package
-- `pip`: Bundle Python package
-- `maven`: Bundle Maven package
-- `nuget`: Bundle NuGet package
-- `docker`: Bundle Docker package
-- `apk`: Bundle APK package
+All commands share the same option set:
 
-### Global Options
+```
+Options:
+  -p, --package <name>     Package name
+  -w, --workspace [path]   Bundle all dependencies from a workspace manifest file.
+                           The path argument defaults to current directory if omitted,
+                           but the flag itself is required (use either --package or --workspace).
+  -v, --version <version>  Package version (defaults to latest)
+  -o, --output <path>      Output directory
+  -r, --repo <url>         Repository URL (for private/custom registries)
+  -u, --username <user>    Repository username
+  -P, --password <pass>    Repository password
+  -h, --help               display help for command
+```
 
-These options are available for all commands:
-
-- `-p, --package <name>`: Package name (Required)
-- `-v, --version <version>`: Package version (Optional, defaults to latest)
-- `-o, --output <path>`: Custom output directory (Optional)
-- `-r, --repo <url>`: Repository URL (for private/custom registries)
-- `-u, --username <user>`: Repository username
-- `-P, --password <pass>`: Repository password
-- `-h, --help`: Display help
+> Either `--package` or `--workspace` is required — not both.
 
 ### Output Directory
 
-By default, bundles are created in a `bundles/` subdirectory within the current working directory, following the naming convention:
-`bundles/<safe-package-name>-<version>-bundle/`
+Bundles are created in `bundles/<safe-package-name>-<version>-bundle/` by default. Override with `--output`.
 
-You can override this location using the `--output` flag.
+---
 
-### Examples
+## Examples
 
-#### NPM
+### NPM — single package
 ```sh
-pkg-deps npm --package axios --version 1.0.0
+pkg-deps npm --package lodash --version 4.17.21
+# → bundles/lodash-4.17.21-bundle/lodash-4.17.21.tgz
 ```
-Creates `bundles/axios-1.0.0-bundle/` containing `.tgz` files.
 
-#### Python (Pip)
+### NPM — workspace (`package.json`)
+```sh
+pkg-deps npm --workspace
+# or point to a specific directory:
+pkg-deps npm --workspace ./my-app
+```
+
+### Python (pip) — single package
 ```sh
 pkg-deps pip --package requests --version 2.31.0
+# → bundles/requests-2.31.0-bundle/ (whl + tar.gz files)
 ```
-Creates `bundles/requests-2.31.0-bundle/` containing whl/tar.gz files.
 
-#### Java (Maven)
+### Python (pip) — workspace (`requirements.txt`)
+```sh
+pkg-deps pip --workspace
+# or:
+pkg-deps pip --workspace ./my-app
+```
+
+### Java (Maven) — single package
 ```sh
 pkg-deps maven --package org.mockito:mockito-core --version 5.10.0
+# → bundles/mockito-core-5.10.0-bundle/ (JARs + POMs)
 ```
-Creates `bundles/mockito-core-5.10.0-bundle/` containing JARs and POMs.
 
-#### Private Repository Example
+### Java (Maven) — workspace (`pom.xml`)
+```sh
+pkg-deps maven --workspace
+# or:
+pkg-deps maven --workspace ./my-app
+```
+
+### .NET (NuGet) — single package
+```sh
+pkg-deps nuget --package Newtonsoft.Json --version 13.0.3
+# → bundles/Newtonsoft-Json-13.0.3-bundle/ (.nupkg)
+```
+
+### .NET (NuGet) — workspace (`packages.config`)
+```sh
+pkg-deps nuget --workspace
+# or:
+pkg-deps nuget --workspace ./my-app
+```
+
+### Docker
+```sh
+pkg-deps docker --package alpine --version latest
+# → bundles/alpine-latest-bundle/alpine-latest.tar
+```
+
+### Alpine (apk)
+```sh
+pkg-deps apk --package curl
+# → bundles/curl-latest-bundle/
+```
+
+### Private / Artifactory Registry
 ```sh
 pkg-deps npm \
   --package @myorg/private-pkg \
@@ -92,7 +143,7 @@ pkg-deps npm \
 
 ### Extra Arguments
 
-Any additional arguments passed to the CLI will be forwarded to the underlying package manager command.
+Additional arguments are forwarded to the underlying package manager:
 
 ```sh
 pkg-deps npm --package axios -- --registry=https://registry.npmmirror.com
