@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [2.1.0](https://github.com/ventura-bar/pkg-deps/compare/v2.1.0-beta.1...v2.1.0) (2026-02-27)
+
+
+### Features
+
+* Add `--workspace` option to bundle dependencies from project manifests for npm, nuget, pip, and maven. ([7da379b](https://github.com/ventura-bar/pkg-deps/commit/7da379be2e28aa480c4428837a2f374f8102c199))
+
 ## [2.1.0-beta.1](https://github.com/ventura-bar/pkg-deps/compare/v2.1.0-beta.0...v2.1.0-beta.1) (2026-02-18)
 
 ## [2.1.0-beta.0](https://github.com/ventura-bar/pkg-deps/compare/v2.0.6...v2.1.0-beta.0) (2026-02-18)
