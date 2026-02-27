@@ -86,17 +86,43 @@ class MavenHandler extends BaseHandler {
     return settingsPath;
   }
 
-  async _download(name, version, extraArgs, repoUrl, username, password, outDir) {
+  async resolveTarget(name, version, repoUrl, workspace, tmpDir) {
+    if (workspace) {
+      const pomPath = await this.prepareWorkspace(workspace, 'pom.xml');
+
+      return {
+        pomPath,
+        downloadTarget: `dependencies from ${pomPath}`,
+        artifact: 'workspace'
+      };
+    }
+
     const artifactInfo = this.parsePackageName(name);
     const actualVersion = version || (await this.resolveLatestVersion(artifactInfo, repoUrl));
     const artifact = `${name}:${actualVersion}`;
+    const pomPath = await this.createPom(tmpDir, artifactInfo, actualVersion);
 
-    const tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'pkg-deps-maven-'));
+    return {
+      pomPath,
+      downloadTarget: `${artifact} and dependencies`,
+      artifact
+    };
+  }
+
+  async executeDownload({ name, version, extraArgs, repoUrl, username, password, outDir, workspace }) {
+    const tmpDir = (!workspace || repoUrl) && await fs.mkdtemp(path.join(os.tmpdir(), 'pkg-deps-maven-'));
 
     try {
-      console.log(chalk.blue(`Downloading ${artifact} and dependencies...`));
+      const { pomPath, downloadTarget, artifact } = await this.resolveTarget(
+        name,
+        version,
+        repoUrl,
+        workspace,
+        tmpDir
+      );
 
-      const pomPath = await this.createPom(tmpDir, artifactInfo, actualVersion);
+      console.log(chalk.blue(`Downloading ${downloadTarget}...`));
+
       const settingsPath = await this.createSettings(tmpDir, repoUrl, username, password);
 
       const mvnArgs = [
@@ -118,7 +144,9 @@ class MavenHandler extends BaseHandler {
       console.log(chalk.green(`Offline JARs and POMs for ${artifact} are in ${outDir}`));
 
     } finally {
-      await fs.remove(tmpDir);
+      if (tmpDir) {
+        await fs.remove(tmpDir);
+      }
     }
   }
 }

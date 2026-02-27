@@ -9,7 +9,11 @@ class DockerHandler extends BaseHandler {
         super('docker');
     }
 
-    async _download(name, version, extraArgs, repoUrl, username, password, outDir) {
+    async executeDownload({ name, version, extraArgs, repoUrl, username, password, outDir, workspace }) {
+        if (workspace) {
+            console.warn(chalk.yellow('[docker] Workspace bundling is not supported for docker packages. Treating as single package.'));
+        }
+
         const actualVersion = version || 'latest';
         const image = `${name}:${actualVersion}`;
         const outputName = `${name.replaceAll(/[^\w-]/g, '-')}-${actualVersion}`;

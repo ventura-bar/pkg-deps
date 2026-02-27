@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<configuration>
+  <packageSources>
+    <add key="TempSource" value="{{ repoUrl }}" />
+  </packageSources>
+  {% if username and password %}
+  <packageSourceCredentials>
+    <TempSource>
+      <add key="Username" value="{{ username }}" />
+      <add key="ClearTextPassword" value="{{ password }}" />
+    </TempSource>
+  </packageSourceCredentials>
+  {% endif %}
+</configuration>

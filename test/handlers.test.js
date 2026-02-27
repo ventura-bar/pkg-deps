@@ -1,7 +1,7 @@
 const fs = require('fs-extra');
-const path = require('path');
-const { execSync, spawnSync } = require('child_process');
-const assert = require('assert');
+const path = require('node:path');
+const { execSync, spawnSync } = require('node:child_process');
+const assert = require('node:assert');
 
 const PKG_DEPS_PATH = path.join(__dirname, '..', 'bin', 'index.js');
 
@@ -51,7 +51,7 @@ const TESTS = {
     nuget: {
         package: 'Newtonsoft.Json',
         version: '13.0.3',
-        outputDir: 'bundles/Newtonsoft.Json-13.0.3-bundle',
+        outputDir: 'bundles/Newtonsoft-Json-13.0.3-bundle',
         expectedFiles: ['Newtonsoft.Json.13.0.3.nupkg'],
         minFiles: 1,
         skip: !commandExists('nuget') // Skip if nuget not installed
@@ -75,7 +75,12 @@ const TESTS = {
 };
 
 function runCLI(type, packageName, version, extraArgs = []) {
-    const args = [PKG_DEPS_PATH, type, '--package', packageName];
+    const args = [PKG_DEPS_PATH, type];
+
+    if (packageName) {
+        args.push('--package', packageName);
+    }
+
     if (version) {
         args.push('--version', version);
     }
@@ -151,7 +156,7 @@ async function runTests() {
             assert(success, 'CLI command failed');
 
             // Check output files
-            const files = checkFiles(
+            checkFiles(
                 config.outputDir,
                 config.expectedFiles,
                 config.expectedPatterns,

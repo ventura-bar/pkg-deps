@@ -7,9 +7,20 @@ class PipHandler extends BaseHandler {
         super('pip');
     }
 
-    async _download(name, version, extraArgs, repoUrl, username, password, outDir) {
-        const packageSpec = version ? `${name}==${version}` : name;
-        const args = ['download', '--dest', outDir, packageSpec, ...extraArgs];
+    async executeDownload({ name, version, extraArgs, repoUrl, username, password, outDir, workspace }) {
+        const packageName = version ? `${name}==${version}` : name;
+
+        const args = ['download', '--dest', outDir];
+
+        if (workspace) {
+            args.push('-r', await this.prepareWorkspace(workspace, 'requirements.txt'));
+        } else {
+            args.push(packageName);
+        }
+
+        args.push(...extraArgs);
+
+        console.log(chalk.blue(`Downloading ${workspace ? 'dependencies from workspace' : packageName}...`));
 
         if (repoUrl) {
             const { url, hostname } = getAuthenticatedUrl(repoUrl, username, password);
