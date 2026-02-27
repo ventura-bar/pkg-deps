@@ -15,7 +15,7 @@ const handlers = {
     apk: apkHandler,
 };
 
-async function handlePackage(name, version, type, extraArgs = [], repoUrl, username, password, outputDir, workspace) {
+async function handlePackage(name, version, type, extraArgs, repoUrl, username, password, outputDir, workspace) {
     const handler = handlers[type.toLowerCase()];
 
     if (!handler) {
@@ -28,12 +28,14 @@ async function handlePackage(name, version, type, extraArgs = [], repoUrl, usern
         console.log(chalk.blue(`Bundling ${type} package: ${name}@${version}...`));
     }
 
-    if (extraArgs.length > 0) {
+    if (extraArgs && extraArgs.length > 0) {
         console.log(chalk.gray(`Extra arguments: ${extraArgs.join(' ')}`));
     }
+
     if (repoUrl) {
         console.log(chalk.gray(`Using repository: ${repoUrl}`));
     }
+
     // Pass credentials if provided (only Maven uses them)
     await handler.download({ name, version, repoUrl, username, password, outputDir, workspace, extraArgs });
 

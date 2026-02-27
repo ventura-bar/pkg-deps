@@ -1,6 +1,6 @@
-const { exec } = require('child_process');
-const util = require('util');
-const path = require('path');
+const { exec } = require('node:child_process');
+const util = require('node:util');
+const path = require('node:path');
 const chalk = require('chalk');
 const fs = require('fs-extra');
 
@@ -37,7 +37,8 @@ const cliPath = path.resolve(__dirname, '../bin/index.js');
 const testOutDir = path.resolve(__dirname, '../bundles/top-20-tests');
 
 async function runTests() {
-    console.log(chalk.bold.cyan('\\n🚀 Starting Top 20 Packages Bulk Test\\n'));
+    const startMsg = String.raw`\n🚀 Starting Top 20 Packages Bulk Test\n`;
+    console.log(chalk.bold.cyan(startMsg));
 
     await fs.ensureDir(testOutDir);
     let totalSuccess = 0;
@@ -45,41 +46,45 @@ async function runTests() {
     const failures = [];
 
     for (const [manager, pkgs] of Object.entries(packages)) {
-        console.log(chalk.bold.magenta(`\\n--- Testing ${manager.toUpperCase()} ---`));
+        const sectionMsg = String.raw`\n--- Testing ` + manager.toUpperCase() + String.raw` ---`;
+        console.log(chalk.bold.magenta(sectionMsg));
 
         for (const pkg of pkgs) {
-            const outPath = path.join(testOutDir, `${manager}-${pkg.replace(/[:/@]/g, '-')}`);
+            const outPath = path.join(testOutDir, `${manager}-${pkg.replaceAll(/[:/@]/g, '-')}`);
             console.log(chalk.blue(`Bundling ${manager} package: ${pkg}...`));
 
             try {
-                // To avoid hanging forever on a huge download, wrap with a timeout if needed, but we'll let it rip for now.
                 const cmd = `node ${cliPath} ${manager} --package ${pkg} --output ${outPath}`;
-                const { stdout, stderr } = await execAsync(cmd);
+                await execAsync(cmd);
 
-                // Assert it succeeded
                 console.log(chalk.green(`  ✅ ${pkg} successfully bundled!`));
                 totalSuccess++;
             } catch (err) {
+                const newline = String.raw`\n`;
                 console.error(chalk.red(`  ❌ ${pkg} failed to bundle!`));
-                console.error(chalk.red(`     Error: ${err.message.split('\\n')[0]}`));
+                console.error(chalk.red(`     Error: ${err.message.split(newline)[0]}`));
                 failures.push({ manager, pkg, error: err.message });
                 totalFailed++;
             }
         }
     }
 
-    console.log(chalk.bold.cyan('\\n📊 Test Summary:'));
+    const summaryMsg = String.raw`\n📊 Test Summary:`;
+    console.log(chalk.bold.cyan(summaryMsg));
     console.log(chalk.green(`  ✅ Passed: ${totalSuccess}`));
     console.log(chalk.red(`  ❌ Failed: ${totalFailed}`));
 
     if (totalFailed > 0) {
-        console.log(chalk.bold.red('\\nFailure Details:'));
+        const failureMsg = String.raw`\nFailure Details:`;
+        console.log(chalk.bold.red(failureMsg));
+        const newline = String.raw`\n`;
         failures.forEach(f => {
-            console.log(chalk.red(`- [${f.manager}] ${f.pkg}: ${f.error.split('\\n')[0]}`));
+            console.log(chalk.red(`- [${f.manager}] ${f.pkg}: ${f.error.split(newline)[0]}`));
         });
         process.exit(1);
     } else {
-        console.log(chalk.bold.green('\\n🎉 All packages bundled successfully!\\n'));
+        const successMsg = String.raw`\n🎉 All packages bundled successfully!\n`;
+        console.log(chalk.bold.green(successMsg));
     }
 }
 

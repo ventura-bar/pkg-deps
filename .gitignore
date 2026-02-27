@@ -27,3 +27,6 @@ bundles/
 *.nupkg
 *.apk
 *-bundle/
+
+# SonarQube
+.scannerwork/*

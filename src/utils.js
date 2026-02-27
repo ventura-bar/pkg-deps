@@ -37,7 +37,7 @@ function getAuthenticatedUrl(repoUrl, username, password) {
         }
         return { url: url.toString(), hostname: url.hostname };
     } catch (e) {
-        throw new Error(`Invalid repository URL: "${repoUrl}"`);
+        throw new Error(`Invalid repository URL: "${repoUrl}"`, { cause: e });
     }
 }
 
